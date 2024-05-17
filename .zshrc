@@ -73,7 +73,8 @@ zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 zstyle ':completion:*' menu no
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
 zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
-
+#OPTS
+setopt autocd
 # Aliases
 alias ls='ls --color'
 #alias vim='nvim'
@@ -82,18 +83,18 @@ alias van9sh="ssh van9@van9.ru -p 6969"
 alias vim="/opt/nvim-linux64/bin/nvim"
 alias sshiren="sshpass -f /home/van9/.config/myconfigs/SSOJINR ssh -J ponomarev@ssh-gate.jinr.ru van9@159.93.106.9"
 export PATH="$PATH:/usr/local/go/bin"
-
+export PATH="$PATH:/home/van9/.local/bin"
 #custom function 
-sshirensend() {
-  if [ $# -lt 2 ]
-  then
-    echo "Usage: $funcstack[1] <path/copy/from/> </path/copy/to>"
-    return
-  fi
-  sshpass -f /home/van9/.config/myconfigs/SSOJINR scp $1 -J ponomarev@ssh-gate.jinr.ru van9@159.93.106.9:$2 
-  echo "First argument: $1"
-  echo "Second argument: $2"
-}
+#sshirensend() {
+ # if [ $# -lt 2 ]
+  #then
+   # echo "Usage: $funcstack[1] <path/copy/from/> </path/copy/to>"
+    #return
+  #fi
+  #sshpass -f /home/van9/.config/myconfigs/SSOJINR scp $1 -J ponomarev@ssh-gate.jinr.ru van9@159.93.106.9:$2 
+  #echo "First argument: $1"
+  #echo "Second argument: $2"
+#}
 # Shell integrations
-eval "$(fzf --zsh)"
+#eval "$(fzf --zsh)"
 eval "$(zoxide init --cmd cd zsh)"
