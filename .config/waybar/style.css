@@ -56,6 +56,7 @@ button:hover {
 #temperature,
 #backlight,
 #wireplumber,
+#vpn,
 #tray,
 #mode,
 #scratchpad {
@@ -110,8 +111,7 @@ button:hover {
 }
 
 #custom-vpn {
-    color: @lavender;
-    border-radius: 15px;
-    padding-left: 6px;
-    padding-right: 6px;
+    color: @yellow;
+    border-bottom: 2px solid @yellow;
 }
+

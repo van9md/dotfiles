@@ -12,6 +12,7 @@
         "idle_inhibitor",
         "custom/weather",
         "network",
+        "custom/vpn",
         "pulseaudio",
         "clock",
         "clock#date",
@@ -121,5 +122,14 @@
         "tooltip-format-wifi": " {essid} {frequency}MHz\nStrength: {signaldBm}dBm ({signalStrength}%)\nIP: {ipaddr}/{cidr}\n {bandwidthUpBits}  {bandwidthDownBits}",
         "min-length": 5,
         "max-length": 17
-    }
+    },
+    "custom/vpn":{
+        "format": "{icon}",
+        "tooltip-format": "{icon}",
+        "exec": "$HOME/.config/waybar/wg.sh",
+        "return-type": "json",
+        "interval": 5,
+        "format-icons": ["󱩆","󰟑"],
+        "min-length":5
+}
 }
