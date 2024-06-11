@@ -84,7 +84,9 @@ alias van9sh="ssh van9@van9.ru -p 6969"
 alias vim="nvim"
 alias sshiren="sshpass -f /home/van9/.config/SSOJINR ssh -J ponomarev@ssh-gate.jinr.ru van9@159.93.106.9"
 export PATH="$PATH:/usr/local/go/bin"
+export PATH="$PATH:/opt"
 export PATH="$PATH:/home/van9/.local/bin"
+export QT_QPA_PLATFORMTHEME=gtk4
 #custom function 
 #sshirensend() {
  # if [ $# -lt 2 ]

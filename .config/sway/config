@@ -247,3 +247,25 @@ bindsym $mod+r mode "resize"
 # the trick, it's all in the `wordexp(3)`.
 #
 include '$(/usr/libexec/sway/layered-include "/usr/share/sway/config.d/*.conf" "/etc/sway/config.d/*.conf" "${XDG_CONFIG_HOME:-$HOME/.config}/sway/config.d/*.conf")'
+
+
+#
+# exit mode
+#
+
+set $exit "exit: [s]leep, [p]oweroff, [r]eboot, [l]ogout, [w]indows"
+mode $exit {
+    bindsym --to-code {
+        s exec systemctl suspend, mode "default"
+        p exec systemctl poweroff
+        r exec systemctl reboot
+        l exec swaymsg exit
+        w exec reboot-to-windows-somehow-lol.sh
+    
+        Return mode "default"
+        Escape mode "default"
+        $mod+x mode "default"
+    }
+}
+
+bindsym --to-code $mod+x mode $exit
