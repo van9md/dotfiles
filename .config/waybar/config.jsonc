@@ -9,6 +9,7 @@
         "sway/window"
     ],
     "modules-right": [
+        "sway/language",
         "idle_inhibitor",
         "network",
         "custom/vpn",
@@ -18,6 +19,9 @@
         "battery",
         "tray"
     ],
+    "sway/language": {
+	"format": "{}"
+},
     "sway/workspaces":{
         "window-rewrite": {},
     },
