@@ -26,6 +26,7 @@ require("lazy").setup({
 	{"hrsh7th/cmp-nvim-lua"},
 	{"saadparwaiz1/cmp_luasnip"},
 	{"L3MON4D3/LuaSnip"},
+    {"ThePrimeagen/vim-be-good"},
 	{"rafamadriz/friendly-snippets"},
   {
     'VonHeikemen/lsp-zero.nvim',
