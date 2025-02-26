@@ -1,0 +1,36 @@
+
+window.opacity = 0.85 
+
+[font]
+size = 14
+
+[font.bold]
+family = "JetBrainsMono Nerd Font"
+style = "Bold"
+
+[font.italic]
+family = "JetBrainsMono Nerd Font"
+style = "Italic"
+
+[font.normal]
+family = "JetBrainsMono Nerd Font"
+style = "Regular"
+
+[general]
+live_config_reload = true
+import = [
+  # uncomment the flavour you want below:
+  #"~/.config/alacritty/catppuccin-latte.toml"
+  # "~/.config/alacritty/catppuccin-frappe.toml"
+  # "~/.config/alacritty/catppuccin-macchiato.toml"
+   "~/.config/alacritty/catppuccin-mocha.toml"
+]
+
+[terminal]
+
+[window.padding]
+x = 4 
+y = 4
+
+[terminal.shell]
+program = "/usr/bin/zsh"
