@@ -22,6 +22,13 @@ return {
                             action = 'Yazi',
                             key = 'y',
                         },
+                        {
+                            icon = '󰠮',
+                            desc = 'Notes',
+                            group = 'xer',
+                            action = 'ObsidianQuickSwitch',
+                            key = 'n',
+                        },
                     },
                     footer={},
                     packages = { enable = false },

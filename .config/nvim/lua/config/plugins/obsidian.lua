@@ -13,10 +13,13 @@ return {
   opts = {
     workspaces = {
       {
-        name = "van9",
-        path = "~/files/Obsidian/obsidian_van9",
+        name = "brain",
+        path = "~/files/Obsidian/brain",
       },
     },
+    note_id_func = function(title)
+    return title
+    end,
   },
     -- see below for full list of options 👇
     vim.keymap.set("n", "<leader>fn", "<cmd>ObsidianQuickSwitch<CR>", { noremap = true, silent = true })
