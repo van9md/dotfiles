@@ -1,9 +1,8 @@
 #set -ga terminal-overrides ",screen-256color*:Tc"
 #set-option -g default-terminal "screen-256color"
 #set-option -g allow-rename on
+set -g default-terminal "xterm-256color"
 set -s escape-time 0
-set-option -sa terminal-features ',xterm-256color:RGB'
-set-option -g allow-passthrough on
 unbind C-b
 set-option -g prefix C-a
 bind-key C-a send-prefix
@@ -13,12 +12,6 @@ bind r source-file ~/.tmux.conf
 
 set -g mouse on
 
-#
-# set-option remain-on-exit on
-set -g renumber-windows on   # renumber all windows when any window is closed
-set -g escape-time 0         # zero-out escape time delay
-set-window-option -g mode-keys vi
-#
 #set -g status-style 'bg=#333333 fg=#5eacd3'
 
 bind r source-file ~/.tmux.conf
@@ -32,23 +25,31 @@ set-window-option -g mode-keys vi
 bind -T copy-mode-vi v send-keys -X begin-selection
 bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel 'xclip -in -selection clipboard'
 
+# vim-like pane switching
+bind -r ^ last-window
+bind -r k select-pane -U
+bind -r j select-pane -D
+bind -r h select-pane -L
+bind -r l select-pane -R
+###
+set-option -g status-position top
 # List of plugins
 set -g @plugin 'tmux-plugins/tpm'
 set -g @plugin 'tmux-plugins/tmux-battery'
 set -g @plugin 'christoomey/vim-tmux-navigator'
-#Theming
-# style
-set-option -g status-position top
-set -g status-position top
-set -g status-justify absolute-centre
-set -g status-style 'fg=color7 bg=default'
-set -g status-right "#[fg=red]#(cat /sys/class/power_supply/BAT0/capacity)% #[fg=yellow]%H:%M"
-set -g status-left ''
-#set -g status-right-length 0
+set -g @plugin 'catppuccin/tmux#v2.1.1'
+# Theming
+set -g @catppuccin_flavor 'mocha'
+set -g @catppuccin_window_status_style "rounded"
+run '~/.tmux/plugins/tmux/catppuccin.tmux'
+set -g status-right-length 100
 set -g status-left-length 100
-setw -g window-status-current-style 'fg=colour1 bg=default bold'
-setw -g window-status-current-format '#I:#W '
-setw -g window-status-style 'fg=color8'
+set -g status-left ""
+#set -g status-right "#{E:@catppuccin_status_application}"
+set -g status-right "#{E:@catppuccin_status_session}"
+set -agF status-right "#{E:@catppuccin_status_date_time}"
+set -agF status-right "#{E:@catppuccin_status_battery}"
+set -g @catppuccin_window_text " #W"
+set -g @catppuccin_window_current_text " #W"
 # Initialize TMUX plugin manager (keep this line at the very bottom of tmux.conf)
 run '~/.tmux/plugins/tpm/tpm'
-bind-key b set-option status
