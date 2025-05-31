@@ -85,6 +85,7 @@ export PATH="$PATH:/var/lib/flatpak/exports/share"
 export PATH="$PATH/home/van9/.local/share/flatpak/exports/share"
 export PATH="$PATH:/opt/yazi"
 export PATH="$PATH:/home/van9/.cargo/bin"
+export PATH="$PATH:/root/.cargo/bin"
 
 export EDITOR='nvim'
 export VISUAL='nvim'

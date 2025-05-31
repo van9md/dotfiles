@@ -55,9 +55,10 @@ return
     end,
     config = function()
       local lsp_defaults = require('lspconfig').util.default_config
-
+        
       -- Add cmp_nvim_lsp capabilities settings to lspconfig
       -- This should be executed before you configure any language server
+        usePlaceholders=true
       lsp_defaults.capabilities = vim.tbl_deep_extend(
         'force',
         lsp_defaults.capabilities,
@@ -70,7 +71,7 @@ return
         desc = 'LSP actions',
         callback = function(event)
           local opts = {buffer = event.buf}
-
+        usePlaceholders=true
           vim.keymap.set('n', 'K', '<cmd>lua vim.lsp.buf.hover()<cr>', opts)
           vim.keymap.set('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<cr>', opts)
           vim.keymap.set('n', 'gD', '<cmd>lua vim.lsp.buf.declaration()<cr>', opts)
