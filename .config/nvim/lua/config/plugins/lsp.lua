@@ -13,31 +13,66 @@ return
   },
 
   -- Autocompletion
+--  {
+--    'hrsh7th/nvim-cmp',
+--    event = 'InsertEnter',
+--    config = function()
+--      local cmp = require('cmp')
+--
+--      cmp.setup({
+--        sources = {
+--          {name = 'nvim_lsp'},
+--          { name = "luasnip" },
+--        },
+--        mapping = cmp.mapping.preset.insert({
+--          ['<C-Space>'] = cmp.mapping.complete(),
+--          ['<C-u>'] = cmp.mapping.scroll_docs(-4),
+--          ['<C-d>'] = cmp.mapping.scroll_docs(4),
+--	  ['<CR>'] = cmp.mapping.confirm({select = true}),
+--        }),
+--        snippet = {
+--          expand = function(args)
+--            vim.snippet.expand(args.body)
+--          end,
+--        },
+--      })
+--    end
+--  },
+-- Autocompletion
   {
     'hrsh7th/nvim-cmp',
     event = 'InsertEnter',
+    dependencies = {
+      'L3MON4D3/LuaSnip', -- Сниппет-менеджер
+      'saadparwaiz1/cmp_luasnip', -- Интеграция LuaSnip с nvim-cmp
+      'rafamadriz/friendly-snippets', -- Базовые сниппеты
+    },
     config = function()
       local cmp = require('cmp')
+      local luasnip = require('luasnip')
+
+      -- Загрузка сниппетов из friendly-snippets
+      require('luasnip.loaders.from_vscode').lazy_load()
 
       cmp.setup({
         sources = {
-          {name = 'nvim_lsp'},
+          { name = 'nvim_lsp' },
+          { name = 'luasnip' },
         },
         mapping = cmp.mapping.preset.insert({
           ['<C-Space>'] = cmp.mapping.complete(),
           ['<C-u>'] = cmp.mapping.scroll_docs(-4),
           ['<C-d>'] = cmp.mapping.scroll_docs(4),
-	  ['<CR>'] = cmp.mapping.confirm({select = true}),
+          ['<CR>'] = cmp.mapping.confirm({ select = true }),
         }),
         snippet = {
           expand = function(args)
-            vim.snippet.expand(args.body)
+            luasnip.lsp_expand(args.body) -- Используем LuaSnip для расширения сниппетов
           end,
         },
       })
-    end
+    end,
   },
-
   -- LSP
   {
     'neovim/nvim-lspconfig',
