@@ -7,11 +7,10 @@ bindkey '^p' history-search-backward
 bindkey '^n' history-search-forward
 
 # Aliases
-alias ls='ls --color'
-alias ll='ls -lah --color'
-alias c='clear'
+alias c="clear"
 alias vim="nvim"
-alias tmux-sessionizer="sh /home/van9/dotfiles/.config/scripts/tmux-sessionizer.sh"
+alias tmux-sessionizer="sh /home/van9/dotfiles/.config/scripts/tmux-sessionizer"
+alias cat="bat"
 # Exports
 export PATH="$PATH:/usr/local/go/bin"
 export PATH="$PATH:/home/van9/go/bin"
@@ -32,4 +31,10 @@ MAILSYNC_MUTE=1
 #OHMYZSH plugins
 plugins=(git docker zsh-autosuggestions)
 source $ZSH/oh-my-zsh.sh
+#alias fix
+alias ls="eza -l --icons --group-directories-first"
+#plugin
 source ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+#atuin
+. "$HOME/.atuin/bin/env"
+eval "$(atuin init zsh)"
