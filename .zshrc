@@ -38,3 +38,5 @@ source ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting/zsh-sy
 #atuin
 . "$HOME/.atuin/bin/env"
 eval "$(atuin init zsh)"
+
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
