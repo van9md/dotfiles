@@ -19,6 +19,7 @@ function M.markdown_search()
         if new_name ~= "" then
           local new_path = cwd .. "/" .. new_name .. ".md"
           vim.cmd("edit " .. vim.fn.fnameescape(new_path))
+          vim.bo.filetype = "markdown"
         end
       end)
       return true
