@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+NOTES_DIR="/home/van9/notes"
+
+clean_path() {
+  echo "$1" | \
+    tr -d '\n\r' | \
+    sed 's/[<>:"|?*]//g' | \
+    sed 's/^[. ]*//; s/[. ]*$//' | \
+    sed 's/[[:space:]]\+/-/g' | \
+    sed 's/--*/-/g' | \
+    sed 's|/|/|g'
+}
+
+files=$(find "$NOTES_DIR" -type f -name "*.md" 2>/dev/null | sed "s|$NOTES_DIR/||")
+
+result=$(echo "$files" | fzf --prompt="📝 Notes > " --print-query)
+
+mapfile -t lines <<< "$result"
+query="${lines[0]:-}"
+selected="${lines[1]:-}"
+
+# if file exists
+if [[ -n "$selected" ]]; then
+  tmux new-window -n "📝$selected" $EDITOR "$NOTES_DIR/$selected"
+  exit 0
+fi
+
+# if file does not exists
+if [[ -n "$query" ]]; then
+  clean_path=$(clean_path "$query")
+  #if name empty
+  [[ -z "$clean_path" ]] && clean_path="note-$(date +%Y%m%d-%H%M%S)"
+  
+  filepath="$NOTES_DIR/${clean_path}.md"
+  
+  mkdir -p "$(dirname "$filepath")"
+  
+  #fill with template
+  cat > "$filepath" <<EOF
+# ${query}
+
+Date: $(date '+%Y-%m-%d %H:%M:%S')
+Tags: 
+
+---
+EOF
+  
+  tmux new-window -n "📝$selected" $EDITOR "$filepath"
+  exit 0
+fi
+
+echo "⚠️ No file name" >&2
+exit 1
+
