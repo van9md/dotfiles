@@ -10,8 +10,12 @@ return {
         install_dir = vim.fn.stdpath("data") .. "/site",
       })
 
+require('render-markdown').setup({
+    file_types = { 'markdown', 'vimwiki' },
+        })
+
       -- Языки для установки
-      require("nvim-treesitter").install({
+      require("nvim-treesitter").setup({
         "lua",
         "vim",
         "vimdoc",

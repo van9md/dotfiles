@@ -26,3 +26,5 @@
 
   vim.opt.updatetime = 50
   vim.opt.conceallevel = 2
+
+  vim.treesitter.language.register('markdown', 'vimwiki')
