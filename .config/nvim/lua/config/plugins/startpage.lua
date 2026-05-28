@@ -15,13 +15,6 @@ return {
                             action = 'Telescope find_files',
                             key = 'f',
                         },
-                        {
-                            icon = ' ',
-                            desc = 'Yazi',
-                            group = 'Number',
-                            action = 'Yazi',
-                            key = 'y',
-                        },
                     },
                     footer={},
                     packages = { enable = false },
