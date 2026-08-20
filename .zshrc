@@ -10,6 +10,7 @@ bindkey '^n' history-search-forward
 alias c="clear"
 alias vim="nvim"
 alias tmux-sessionizer="sh /home/van9/dotfiles/.config/scripts/tmux-sessionizer"
+alias claude-vpn='HTTPS_PROXY=http://127.0.0.1:10809 NO_PROXY="localhost,127.0.0.1" claude'
 alias cat="bat"
 # Exports
 export PATH="$PATH:/usr/local/go/bin"
@@ -38,5 +39,3 @@ source ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting/zsh-sy
 #atuin
 . "$HOME/.atuin/bin/env"
 eval "$(atuin init zsh)"
-
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
