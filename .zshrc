@@ -1,41 +1,44 @@
-#
-#OHMYZSH
+# PATH без дублей (zsh пересобирает его в каждом интерактивном шелле)
+typeset -U path PATH
+
+# oh-my-zsh
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="robbyrussell"
-# Keybindings
-bindkey '^p' history-search-backward
-bindkey '^n' history-search-forward
+plugins=(git docker zsh-autosuggestions)
+source "$ZSH/oh-my-zsh.sh"
 
-# Aliases
-alias c="clear"
-alias vim="nvim"
-alias tmux-sessionizer="sh /home/van9/dotfiles/.config/scripts/tmux-sessionizer"
-alias claude-vpn='HTTPS_PROXY=http://127.0.0.1:10809 NO_PROXY="localhost,127.0.0.1" claude'
-alias cat="bat"
 # Exports
-export PATH="$PATH:/usr/local/go/bin"
-export PATH="$PATH:/home/van9/go/bin"
-export PATH="$PATH:/opt"
-export PATH="$PATH:/home/van9/.local/bin"
-export PATH="$PATH:/var/lib/flatpak/exports/share"
-export PATH="$PATH/home/van9/.local/share/flatpak/exports/share"
-export PATH="$PATH:/opt/yazi"
-export PATH="$PATH:/home/van9/.cargo/bin"
-export PATH="$PATH:/root/.cargo/bin"
-export PATH="$PATH:/home/van9/files/code/flutter/flutter/bin"
-export PATH="$PATH:$HOME/.atuin/bin"
-export GOPATH=$HOME/go
+export GOPATH="$HOME/go"
 export EDITOR='nvim'
 export VISUAL='nvim'
 export MANPAGER="nvim +Man!"
-MAILSYNC_MUTE=1
-#OHMYZSH plugins
-plugins=(git docker zsh-autosuggestions)
-source $ZSH/oh-my-zsh.sh
-#alias fix
+
+path=(
+  "$HOME/.local/bin"
+  "$HOME/.config/scripts"
+  "$HOME/.cargo/bin"
+  "$HOME/.atuin/bin"
+  "$GOPATH/bin"
+  /usr/local/go/bin
+  /opt/yazi
+  /var/lib/flatpak/exports/bin
+  $path
+)
+
+# Aliases
+alias vim="nvim"
+alias cat="bat"
 alias ls="eza -l --icons --group-directories-first"
-#plugin
-source ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-#atuin
+alias claude-vpn='HTTPS_PROXY=http://127.0.0.1:10809 NO_PROXY="localhost,127.0.0.1" claude'
+
+# Tools
 . "$HOME/.atuin/bin/env"
 eval "$(atuin init zsh)"
+eval "$(zoxide init zsh)"
+
+# zsh-syntax-highlighting должен идти после всех, кто определяет виджеты (atuin)
+source "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+
+# Keybindings — в самом конце, иначе omz/atuin их перетирают
+bindkey '^p' history-search-backward
+bindkey '^n' history-search-forward
