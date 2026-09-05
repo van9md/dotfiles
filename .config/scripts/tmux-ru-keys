@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Дублирует однобуквенные биндинги таблицы prefix на русскую раскладку по
+# позициям ЙЦУКЕН, чтобы prefix + c и prefix + с делали одно и то же.
+# Вызывается из ~/.tmux.conf через run-shell в самом конце, после tpm.
+set -uo pipefail
+
+lat="qwertyuiop[]asdfghjkl;zxcvbnm,.QWERTYUIOP{}ASDFGHJKL:ZXCVBNM<>"
+cyr="йцукенгшщзхъфывапролджячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЯЧСМИТЬБЮ"
+
+declare -A map
+for ((i = 0; i < ${#lat}; i++)); do
+  map["${lat:i:1}"]="${cyr:i:1}"
+done
+
+# bind-key [-flags] -T prefix <key> <command>
+re='^(bind-key( +-[a-zA-Z0-9]+)* +-T +prefix +)([^ ]+)( +)'
+
+tmpfile=$(mktemp) || exit 1
+trap 'rm -f "$tmpfile"' EXIT
+
+while IFS= read -r line; do
+  [[ $line =~ $re ]] || continue
+  key="${BASH_REMATCH[3]}"
+  ru="${map[$key]:-}"
+  [[ -n "$ru" ]] || continue
+  # подменяется только клавиша; флаги и команда переносятся как есть
+  printf '%s%s%s%s\n' \
+    "${BASH_REMATCH[1]}" "$ru" "${BASH_REMATCH[4]}" \
+    "${line:${#BASH_REMATCH[0]}}" >> "$tmpfile"
+done < <(tmux list-keys -T prefix)
+
+[[ -s "$tmpfile" ]] && tmux source-file "$tmpfile"
