@@ -2,12 +2,12 @@
 
 ## v3
 
-Конфиги раскладываются симлинками через [GNU Stow](https://www.gnu.org/software/stow/):
-структура репозитория повторяет структуру `$HOME`.
+Раскладывается симлинками через [GNU Stow](https://www.gnu.org/software/stow/),
+структура репозитория повторяет `$HOME`.
 
 | Путь | Что это |
 | --- | --- |
-| `.zshrc` | zsh без фреймворка, atuin, plugins из `~/.zsh/plugins` |
+| `.zshrc` | zsh без фреймворка, atuin, плагины из `~/.zsh/plugins` |
 | `.tmux.conf` | tmux |
 | `.config/kitty/` | терминал |
 | `.config/scripts/` | `tmux-sessionizer`, `fzf-notes`, `fzf-ssh` |
@@ -15,25 +15,19 @@
 
 ## Установка на новой машине
 
-Сначала зависимости — без них `.zshrc` упадёт на первом же `source`, а половина
-биндов будет ссылаться в пустоту.
+Зависимости:
 
 ```sh
-# пакеты (Fedora)
 sudo dnf install -y zsh tmux kitty stow git neovim fzf ripgrep bat eza wl-clipboard
 
-# два плагина zsh (фреймворка нет, .zshrc сам их подключает)
 git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/plugins/zsh-autosuggestions
 git clone https://github.com/zsh-users/zsh-syntax-highlighting ~/.zsh/plugins/zsh-syntax-highlighting
-
-# atuin (ставит себя в ~/.atuin, .zshrc ждёт его именно там)
-curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
-
-# tpm — плагины tmux
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+
+curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
 ```
 
-Потом сами конфиги:
+Конфиги:
 
 ```sh
 git clone --recurse-submodules git@github.com:van9md/dotfiles.git ~/dotfiles
@@ -41,75 +35,32 @@ cd ~/dotfiles
 stow .
 ```
 
-Дальше запустить tmux и нажать `prefix + I` (`C-a I`), чтобы tpm подтянул плагины.
+Дальше `C-a I` в tmux, чтобы tpm подтянул плагины.
 
-Если склонировал без `--recurse-submodules`, папка `.config/nvim` будет пустой — дотяни:
+Если склонировал без `--recurse-submodules`, `.config/nvim` будет пустой — `git submodule update --init`.
 
-```sh
-git submodule update --init
-```
-
-Затем один раз настрой git в этом репозитории (это локальный конфиг, он не версионируется,
-поэтому его надо повторять на каждой машине):
+Настройки git для этого репозитория (не версионируются, поэтому на каждой машине заново):
 
 ```sh
-git config push.recurseSubmodules on-demand   # не даст запушить указатель на неотправленный коммит
-git config submodule.recurse true             # pull/checkout подтягивают и nvim
-git config status.submodulesummary 1          # status показывает, что изменилось внутри nvim
-git config diff.submodule log                 # diff показывает коммиты, а не голый SHA
+git config push.recurseSubmodules on-demand
+git config submodule.recurse true
+git config status.submodulesummary 1
+git config diff.submodule log
 ```
 
 ## Как коммитить
 
-Обычные конфиги — как всегда:
+Обычные конфиги — как всегда. Конфиг nvim — в два захода, это отдельный репозиторий,
+и `dotfiles` хранит только указатель на его коммит:
 
 ```sh
-git add .zshrc
-git commit -m "chore(zsh): add foo alias"
+cd ~/.config/nvim
+git add -A && git commit -m "feat: add rust lsp"
+
+cd ~/dotfiles
+git add .config/nvim && git commit -m "chore(nvim): bump submodule"
 git push
 ```
 
-**Конфиг nvim — в два захода**, потому что это отдельный репозиторий. Родительский
-`dotfiles` хранит не файлы, а указатель на конкретный коммит в форке kickstart, поэтому
-одного коммита никогда не достаточно:
-
-```sh
-# 1) сам конфиг — внутри submodule
-cd ~/.config/nvim
-git add -A
-git commit -m "feat: add rust lsp"
-
-# 2) сдвинувшийся указатель — в dotfiles
-cd ~/dotfiles
-git add .config/nvim
-git commit -m "chore(nvim): bump submodule"
-git push          # с push.recurseSubmodules=on-demand форк запушится автоматически
-```
-
-Забыть шаг 2 не страшно — `git status` в `dotfiles` покажет `modified: .config/nvim (new commits)`.
-А вот забыть запушить форк было бы больно (на другой машине submodule не развернулся бы) —
-именно это и закрывает `push.recurseSubmodules=on-demand`.
-
-### Формат сообщений
-
-[Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `chore:`,
-`docs:`, `refactor:`. Скоуп — по имени конфига: `chore(zsh):`, `feat(nvim):`, `fix(tmux):`.
-
-## Обновить kickstart из upstream
-
-```sh
-cd ~/.config/nvim
-git remote add upstream https://github.com/nvim-lua/kickstart.nvim.git   # один раз
-git fetch upstream
-git merge upstream/master
-cd ~/dotfiles && git add .config/nvim && git commit -m "chore(nvim): merge upstream kickstart"
-```
-
-## Старый конфиг nvim
-
-До перехода на kickstart был свой конфиг на lazy.nvim (`lua/config/*`). Он остался в истории:
-
-```sh
-git show 90ca255:.config/nvim/init.lua
-git checkout 90ca255 -- .config/nvim        # если понадобится целиком
-```
+`push.recurseSubmodules=on-demand` заодно отправит и форк — без этого на другой машине
+submodule не развернулся бы.
