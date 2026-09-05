@@ -7,7 +7,7 @@
 
 | Путь | Что это |
 | --- | --- |
-| `.zshrc` | zsh + oh-my-zsh, atuin, fzf |
+| `.zshrc` | zsh без фреймворка, atuin, plugins из `~/.zsh/plugins` |
 | `.tmux.conf` | tmux |
 | `.config/kitty/` | терминал |
 | `.config/scripts/` | `tmux-sessionizer`, `fzf-notes`, `fzf-ssh` |
@@ -20,14 +20,11 @@
 
 ```sh
 # пакеты (Fedora)
-sudo dnf install -y zsh tmux kitty stow git neovim fzf ripgrep bat eza zoxide wl-clipboard
+sudo dnf install -y zsh tmux kitty stow git neovim fzf ripgrep bat eza wl-clipboard
 
-# oh-my-zsh + два кастомных плагина
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-git clone https://github.com/zsh-users/zsh-autosuggestions \
-  ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
-git clone https://github.com/zsh-users/zsh-syntax-highlighting \
-  ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+# два плагина zsh (фреймворка нет, .zshrc сам их подключает)
+git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/plugins/zsh-autosuggestions
+git clone https://github.com/zsh-users/zsh-syntax-highlighting ~/.zsh/plugins/zsh-syntax-highlighting
 
 # atuin (ставит себя в ~/.atuin, .zshrc ждёт его именно там)
 curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
