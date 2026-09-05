@@ -1,13 +1,24 @@
 #!/usr/bin/env bash
 
+SSH_CONFIG="$HOME/.ssh/config"
+
 if [[ $# -eq 1 ]]; then
     selected=$1
 else
-    selected=$(grep -E "^Host " ~/.ssh/config | grep -v "#" | sed "s/^Host //" | tr " " "\n" | grep -v "^$" | grep -v "[*?]" | sort -u | fzf)
+    if [[ ! -r "$SSH_CONFIG" ]]; then
+        echo "⚠️ No $SSH_CONFIG" >&2
+        exit 1
+    fi
+    selected=$(grep -E "^Host " "$SSH_CONFIG" | grep -v "#" | sed "s/^Host //" | tr " " "\n" | grep -v "^$" | grep -v "[*?]" | sort -u | fzf)
 fi
 
-if [[ -z $selected ]]; then
+if [[ -z "$selected" ]]; then
     exit 0
 fi
 
-tmux new-window -n "🔌$selected" "ssh $selected"
+# вне tmux открывать окно некуда — подключаемся прямо здесь
+if [[ -n "$TMUX" ]]; then
+    tmux new-window -n "🔌$selected" ssh "$selected"
+else
+    exec ssh "$selected"
+fi
