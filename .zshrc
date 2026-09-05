@@ -28,6 +28,8 @@ HISTSIZE=50000
 SAVEHIST=50000
 
 # Completion: полный compinit раз в сутки, остальные запуски — из кэша
+# vendor-completions Fedora не кладёт в fpath сама (там лежит _docker)
+fpath=(/usr/share/zsh/vendor-completions $fpath)
 autoload -Uz compinit
 if [[ -n $HOME/.zcompdump(#qN.mh+24) ]]; then
   compinit
