@@ -21,7 +21,8 @@ RG_CMD="rg --line-number --no-heading --color=always --smart-case --glob '*.md'"
 PREVIEW_FILE='bat --color=always --style=numbers {} 2>/dev/null || cat {}'
 PREVIEW_GREP='bat --color=always --style=numbers --highlight-line {2} {1} 2>/dev/null || cat {1}'
 
-HEADER='enter: open · ctrl-n: new · ctrl-f: text search · ctrl-d: delete · ctrl-/: preview'
+HEADER_NAME='enter: open · ctrl-n: new · ctrl-f: text search · ctrl-d: delete · ctrl-/: preview'
+HEADER_GREP='enter: open · ctrl-f: back to names · ctrl-d: delete · ctrl-/: preview'
 
 clean_path() {
   echo "$1" | \
@@ -41,7 +42,8 @@ strip_ansi() {
 open_note() {
   local path="$1" line="${2:-}" name
   name=$(basename "$path" .md)
-  local -a cmd=("$EDITOR")
+  local -a cmd
+  read -ra cmd <<< "$EDITOR"
   [[ -n "$line" ]] && cmd+=("+$line")
   cmd+=("$NOTES_DIR/$path")
 
@@ -63,7 +65,7 @@ while :; do
             --query="$query" \
             --print-query \
             --expect=ctrl-n,ctrl-f \
-            --header="$HEADER" \
+            --header="$HEADER_NAME" \
             --preview="$PREVIEW_FILE" \
             --preview-window='right:60%:wrap' \
             --bind='ctrl-/:toggle-preview' \
@@ -74,17 +76,17 @@ while :; do
       fzf --prompt="🔍 Text > " \
           --query="$query" \
           --print-query \
-          --expect=ctrl-n,ctrl-f \
+          --expect=ctrl-f \
           --ansi \
           --disabled \
           --delimiter=: \
-          --header="$HEADER" \
-          --bind="start:reload:$RG_CMD -- {q} . || true" \
-          --bind="change:reload:sleep 0.1; $RG_CMD -- {q} . || true" \
+          --header="$HEADER_GREP" \
+          --bind="start:reload:[ -n {q} ] && $RG_CMD -- {q} . || true" \
+          --bind="change:reload:sleep 0.1; [ -n {q} ] && $RG_CMD -- {q} . || true" \
           --preview="$PREVIEW_GREP" \
           --preview-window='right:60%:wrap:+{2}/2' \
           --bind='ctrl-/:toggle-preview' \
-          --bind="ctrl-d:execute@printf '\ndelete %s ? [y/N] ' {1} && read -r ans && [ \"\$ans\" = y ] && $DELETE_CMD {1}@"
+          --bind="ctrl-d:execute@printf '\ndelete %s ? [y/N] ' {1} && read -r ans && [ \"\$ans\" = y ] && $DELETE_CMD {1}@+reload([ -n {q} ] && $RG_CMD -- {q} . || true)"
     )
   fi
   status=$?
@@ -107,7 +109,7 @@ done
 # open existing note
 if [[ "$key" != "ctrl-n" && -n "$selected" ]]; then
   if [[ "$mode" == "grep" ]]; then
-    file="${selected%%:*}"
+    file="${selected%%:*}"; file="${file#./}"
     line="${selected#*:}"; line="${line%%:*}"
     [[ "$line" =~ ^[0-9]+$ ]] || line=""
     open_note "$file" "$line"
@@ -117,9 +119,14 @@ if [[ "$key" != "ctrl-n" && -n "$selected" ]]; then
   exit 0
 fi
 
-# create new note: ctrl-n, or enter with no matches
-if [[ -n "$query" ]]; then
+# create new note: ctrl-n, or enter with no matches.
+# only in name mode - in grep mode the query is a search string, not a file name
+if [[ "$mode" == "name" && -n "$query" ]]; then
   name=$(clean_path "$query")
+  [[ -z "$name" ]] && name="note-$(date +%Y%m%d-%H%M%S)"
+
+  # do not end up with note.md.md
+  name="${name%.md}"
   [[ -z "$name" ]] && name="note-$(date +%Y%m%d-%H%M%S)"
 
   filepath="${name}.md"
@@ -134,7 +141,8 @@ if [[ -n "$query" ]]; then
 
   # never clobber an existing note
   if [[ ! -e "$filepath" ]]; then
-    title="${query//\"/\\\"}"
+    title="${query//\\/\\\\}"
+    title="${title//\"/\\\"}"
     cat > "$filepath" <<EOF
 ---
 title: "${title}"
@@ -151,5 +159,6 @@ EOF
   exit 0
 fi
 
+[[ "$mode" == "grep" ]] && exit 0
 echo "⚠️ No file name" >&2
 exit 1
