@@ -15,11 +15,36 @@
 
 ## Установка на новой машине
 
+Сначала зависимости — без них `.zshrc` упадёт на первом же `source`, а половина
+биндов будет ссылаться в пустоту.
+
+```sh
+# пакеты (Fedora)
+sudo dnf install -y zsh tmux kitty stow git neovim fzf ripgrep bat eza zoxide wl-clipboard
+
+# oh-my-zsh + два кастомных плагина
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+git clone https://github.com/zsh-users/zsh-autosuggestions \
+  ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+git clone https://github.com/zsh-users/zsh-syntax-highlighting \
+  ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+
+# atuin (ставит себя в ~/.atuin, .zshrc ждёт его именно там)
+curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
+
+# tpm — плагины tmux
+git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+```
+
+Потом сами конфиги:
+
 ```sh
 git clone --recurse-submodules git@github.com:van9md/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 stow .
 ```
+
+Дальше запустить tmux и нажать `prefix + I` (`C-a I`), чтобы tpm подтянул плагины.
 
 Если склонировал без `--recurse-submodules`, папка `.config/nvim` будет пустой — дотяни:
 
