@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Текущий трек из MPRIS (D-Bus) для строки статуса tmux — тот же источник,
+# из которого плеер видит KDE, так что работает с браузером, Spotify и всем,
+# что регистрируется в шине. Управление — на глобальных хоткеях KDE.
+set -uo pipefail
+
+MAX_LEN="${TMUX_NP_MAX_LEN:-40}"
+ICON_PLAYING="${TMUX_NP_ICON_PLAYING:-▶}"
+ICON_PAUSED="${TMUX_NP_ICON_PAUSED:-⏸}"
+
+command -v playerctl >/dev/null 2>&1 || exit 0
+
+# Плееров может быть несколько (вкладки браузера — каждая отдельный инстанс),
+# поэтому звучащий важнее стоящего на паузе. Один вызов playerctl на всё:
+# строка дёргается каждые пару секунд, лишние процессы тут ни к чему.
+status='' artist='' title='' found=''
+while IFS='|' read -r p st ar ti; do
+  [[ -n $p ]] || continue
+  if [[ $st == Playing ]]; then
+    found=1 status=$st artist=$ar title=$ti
+    break
+  fi
+  [[ -n $found ]] && continue
+  found=1 status=$st artist=$ar title=$ti
+done < <(playerctl -a metadata \
+  --format '{{playerName}}|{{status}}|{{artist}}|{{title}}' 2>/dev/null)
+
+[[ -n $found && -n $title ]] || exit 0
+
+case $status in
+  Playing) icon=$ICON_PLAYING ;;
+  Paused) icon=$ICON_PAUSED ;;
+  *) exit 0 ;;
+esac
+
+label=$title
+[[ -n $artist ]] && label="$artist — $title"
+((${#label} > MAX_LEN)) && label="${label:0:MAX_LEN-1}…"
+# одиночная # открывает подстановку в формате tmux, поэтому удваивается
+label=${label//#/##}
+
+printf '%s %s' "$icon" "$label"
