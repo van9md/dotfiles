@@ -1,0 +1,226 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+STORE="${PASSWORD_STORE_DIR:-$HOME/.password-store}"
+CLIP_TIME="${PASSWORD_STORE_CLIP_TIME:-45}"
+GEN_LENGTH="${FZF_PASS_GEN_LENGTH:-24}"
+EDITOR="${EDITOR:-nvim}"
+
+if [[ ! -d "$STORE" ]]; then
+  echo "⚠️ No $STORE — run: pass init <gpg-id>" >&2
+  exit 1
+fi
+
+# entries are gpg files, shown as pass names (dir/name without .gpg)
+LIST_CMD="find '$STORE' -type f -name '*.gpg' -printf '%P\n' | sed 's/\.gpg\$//' | sort"
+
+# first line is the password — mask it, the rest is metadata worth reading
+PREVIEW='pass show {} 2>/dev/null | sed "1s/./•/g" || echo "⚠️ decrypt failed"'
+
+HEADER='enter: password · ctrl-y: login · ctrl-o: url · ctrl-e: edit · ctrl-n: new · ctrl-g: generate · ctrl-d: delete · ctrl-/: preview'
+
+# wl-copy/xclip/xsel, whichever this session has
+copy_tool() {
+  if [[ -n "${WAYLAND_DISPLAY:-}" ]] && command -v wl-copy >/dev/null 2>&1; then
+    echo wl
+  elif [[ -n "${DISPLAY:-}" ]] && command -v xclip >/dev/null 2>&1; then
+    echo xclip
+  elif [[ -n "${DISPLAY:-}" ]] && command -v xsel >/dev/null 2>&1; then
+    echo xsel
+  else
+    echo none
+  fi
+}
+
+# klipper (встроен в plasmashell) держит свою историю буфера, поэтому на KDE
+# очистка только через его dbus — см. clear_clip
+qdbus_bin() {
+  local q
+  for q in qdbus6 qdbus-qt6 qdbus; do
+    if command -v "$q" >/dev/null 2>&1 && "$q" org.kde.klipper /klipper >/dev/null 2>&1; then
+      echo "$q"; return 0
+    fi
+  done
+  return 1
+}
+
+put_clip() {
+  local value="$1" tool="$2"
+  case "$tool" in
+    wl)    printf '%s' "$value" | wl-copy ;;
+    xclip) printf '%s' "$value" | xclip -selection clipboard ;;
+    xsel)  printf '%s' "$value" | xsel -ib ;;
+    *)     return 1 ;;
+  esac
+}
+
+# Отложенная очистка. setsid, а не "& disown": в tmux display-popup по выходу
+# из скрипта убивается вся группа процессов панели, и обычный фоновый job
+# не доживает до своего sleep. Секрет передаётся окружением, не аргументами,
+# чтобы не светиться в ps.
+schedule_clear() {
+  local value="$1" tool="$2" qdbus
+  qdbus=$(qdbus_bin) || qdbus=""
+
+  CLIP_VALUE="$value" \
+  CLIP_TOOL="$tool" \
+  CLIP_WAIT="$CLIP_TIME" \
+  CLIP_QDBUS="$qdbus" \
+  CLIP_KEEP_HISTORY="${FZF_PASS_KEEP_HISTORY:-0}" \
+  setsid -f bash -c '
+    sleep "$CLIP_WAIT"
+    case "$CLIP_TOOL" in
+      wl)    now=$(wl-paste -n 2>/dev/null) ;;
+      xclip) now=$(xclip -o -selection clipboard 2>/dev/null) ;;
+      xsel)  now=$(xsel -ob 2>/dev/null) ;;
+    esac
+    # буфер уже перезаписан пользователем — не мешаем
+    [[ "$now" == "$CLIP_VALUE" ]] || exit 0
+
+    # на KDE wl-copy --clear бесполезен: klipper возвращает верх своей истории,
+    # да и сам секрет остаётся в ней. Чистим историю целиком - это единственный
+    # способ убрать его оттуда. FZF_PASS_KEEP_HISTORY=1 отключает.
+    if [[ "$CLIP_KEEP_HISTORY" != 1 && -n "$CLIP_QDBUS" ]] &&
+       "$CLIP_QDBUS" org.kde.klipper /klipper clearClipboardHistory >/dev/null 2>&1; then
+      exit 0
+    fi
+
+    case "$CLIP_TOOL" in
+      wl)    wl-copy --clear ;;
+      xclip) printf "" | xclip -selection clipboard ;;
+      xsel)  xsel -bc ;;
+    esac
+  ' >/dev/null 2>&1 </dev/null
+}
+
+copy_clip() {
+  local value="$1" label="$2" tool
+  tool=$(copy_tool)
+  if [[ "$tool" == none ]]; then
+    echo "⚠️ No clipboard tool (wl-copy/xclip/xsel)" >&2
+    return 1
+  fi
+  put_clip "$value" "$tool" || return 1
+  schedule_clear "$value" "$tool"
+  echo "📋 $label copied, clears in ${CLIP_TIME}s"
+}
+
+# first matching "key: value" line below the password
+field() {
+  local entry="$1" keys="$2"
+  pass show "$entry" 2>/dev/null | tail -n +2 |
+    grep -iEm1 "^[[:space:]]*(${keys})[[:space:]]*:" |
+    sed 's/^[^:]*:[[:space:]]*//'
+}
+
+# keep the name inside the store and free of surprises.
+# двоеточие оставлено: browserpass понимает "192.168.1.111:8006/proxmox" и
+# сопоставляет такую запись только со страницей на этом порту
+clean_name() {
+  echo "$1" |
+    tr -d '\n\r' |
+    sed 's/[<>"|?*\\]//g' |
+    sed 's|\.\.|.|g' |
+    sed 's/[[:space:]]\+/-/g' |
+    sed 's/--*/-/g' |
+    sed 's|//*|/|g' |
+    sed 's|^[-./]*||; s|[-./ ]*$||'
+}
+
+inside_store() {
+  case "$(realpath -m "$STORE/$1")" in
+    "$(realpath -m "$STORE")"/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+query=""
+
+while :; do
+  result=$(
+    eval "$LIST_CMD" |
+      fzf --prompt="🔑 Pass > " \
+          --query="$query" \
+          --print-query \
+          --expect=enter,ctrl-y,ctrl-o,ctrl-n,ctrl-g \
+          --header="$HEADER" \
+          --preview="$PREVIEW" \
+          --preview-window='right:55%:wrap:hidden' \
+          --bind='ctrl-/:toggle-preview' \
+          --bind="ctrl-e:execute(pass edit {})+reload($LIST_CMD)" \
+          --bind="ctrl-d:execute@printf '\ndelete %s ? [y/N] ' {} && read -r ans && [ \"\$ans\" = y ] && pass rm -f {}@+reload($LIST_CMD)"
+  )
+  status=$?
+
+  # esc / ctrl-c
+  [[ $status -eq 130 ]] && exit 0
+
+  mapfile -t lines <<< "$result"
+  query="${lines[0]:-}"
+  key="${lines[1]:-}"
+  selected="${lines[2]:-}"
+
+  # new entry — editor opens empty, first line is the password
+  if [[ "$key" == "ctrl-n" || ( "$key" == "enter" && -z "$selected" ) ]]; then
+    [[ -z "$query" ]] && { echo "⚠️ No entry name" >&2; exit 1; }
+    name=$(clean_name "$query")
+    [[ -z "$name" ]] && { echo "⚠️ No entry name" >&2; exit 1; }
+    inside_store "$name" || { echo "⚠️ Path escapes $STORE" >&2; exit 1; }
+
+    if [[ -e "$STORE/$name.gpg" ]]; then
+      echo "⚠️ $name already exists — use ctrl-e to edit" >&2
+      exit 1
+    fi
+    echo "📝 $name — line 1: password, then login: / url: / notes"
+    pass edit "$name"
+    exit 0
+  fi
+
+  # generated password, straight to the clipboard
+  if [[ "$key" == "ctrl-g" ]]; then
+    [[ -z "$query" ]] && { echo "⚠️ No entry name" >&2; exit 1; }
+    name=$(clean_name "$query")
+    [[ -z "$name" ]] && { echo "⚠️ No entry name" >&2; exit 1; }
+    inside_store "$name" || { echo "⚠️ Path escapes $STORE" >&2; exit 1; }
+
+    if [[ -e "$STORE/$name.gpg" ]]; then
+      printf '%s already exists — overwrite? [y/N] ' "$name"
+      read -r ans
+      [[ "$ans" == y ]] || exit 0
+      pass generate -f "$name" "$GEN_LENGTH" >/dev/null || exit 1
+    else
+      pass generate "$name" "$GEN_LENGTH" >/dev/null || exit 1
+    fi
+    password=$(pass show "$name" 2>/dev/null | head -1)
+    copy_clip "$password" "$name generated (${GEN_LENGTH} chars), password"
+    exit 0
+  fi
+
+  [[ -z "$selected" ]] && exit 0
+
+  case "$key" in
+    ctrl-y)
+      login=$(field "$selected" 'login|user|username|e-?mail')
+      [[ -z "$login" ]] && { echo "⚠️ No login field in $selected" >&2; exit 1; }
+      copy_clip "$login" "login ($selected)"
+      ;;
+    ctrl-o)
+      url=$(field "$selected" 'url|site|website|host')
+      [[ -z "$url" ]] && { echo "⚠️ No url field in $selected" >&2; exit 1; }
+      if command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "$url" >/dev/null 2>&1 &
+        disown 2>/dev/null
+        echo "🌐 $url"
+      else
+        copy_clip "$url" "url ($selected)"
+      fi
+      ;;
+    *)
+      # не pass -c: он вешает свой фоновый sleep, который в tmux-попапе умирает
+      password=$(pass show "$selected" 2>/dev/null | head -1)
+      [[ -z "$password" ]] && { echo "⚠️ Empty password in $selected" >&2; exit 1; }
+      copy_clip "$password" "password ($selected)"
+      ;;
+  esac
+  exit 0
+done

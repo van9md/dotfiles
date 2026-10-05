@@ -54,6 +54,7 @@ alias cat="bat"
 alias ls="eza -l --icons --group-directories-first"
 alias ll="eza -lh --icons --group-directories-first"
 alias l="eza -lah --icons --group-directories-first"
+alias pw="fzf-pass"
 alias claude-vpn='HTTPS_PROXY=http://127.0.0.1:10809 NO_PROXY="localhost,127.0.0.1" claude'
 
 # Tools
